@@ -30,7 +30,7 @@
 <body>
 <main>
   <header>
-    <div class="brand"><div class="brand-mark" aria-hidden="true"></div><div><h1>NEON MAZE <span class="version">V5</span></h1><small>ARCADE EDITION</small></div></div>
+    <div class="brand"><div class="brand-mark" aria-hidden="true"></div><div><h1>NEON MAZE <span class="version">V6</span></h1><small>ARCADE EDITION</small></div></div>
     <div class="actions"><button class="icon-btn" id="pauseBtn" aria-label="Pause">Ⅱ</button><button class="icon-btn" id="soundBtn" aria-label="Son">🔊</button><button class="icon-btn" id="tiltBtn" aria-label="Activer l’inclinaison">⌁</button></div>
   </header>
   <section class="hud" aria-label="Score"><div class="stat"><label>Score</label><strong id="score">00000</strong></div><div class="stat"><label>Record</label><strong id="highScore">00000</strong></div><div class="stat"><label>Vies</label><strong id="lives">♥♥♥</strong></div></section>
@@ -55,7 +55,7 @@
   const dirs = {left:{x:-1,y:0},right:{x:1,y:0},up:{x:0,y:-1},down:{x:0,y:1},none:{x:0,y:0}};
   const opposite = {left:'right',right:'left',up:'down',down:'up',none:'none'};
   const ghostColors = ['#ff4f9a','#22d3ee','#ff8d3d','#b276ff'];
-  let grid, player, ghosts, score=0, highScore=Number(localStorage.getItem('neonMazeHighScore')||0), lives=3, running=false, paused=false, last=0, raf, soundOn=true, frightenedUntil=0, dotsLeft=0, level=1, audioCtx, heldInput=null, tiltEnabled=false, tiltDirection='none', tiltBaseline=null;
+  let grid, player, ghosts, score=0, highScore=Number(localStorage.getItem('neonMazeHighScore')||0), lives=3, running=false, paused=false, last=0, raf, soundOn=true, frightenedUntil=0, dotsLeft=0, level=1, audioCtx, heldInput=null, tiltEnabled=false, tiltDirection='none', tiltBaseline=null, orientationSeen=false;
   highScoreEl.textContent = fmt(highScore);
   function fmt(n){return String(n).padStart(5,'0')}
   function isWall(x,y){return x<0||y<0||x>=W||y>=H||grid[y][x]==='#'}
@@ -79,22 +79,26 @@
   function setTiltDirection(dir){if(dir===tiltDirection)return;if(tiltDirection!=='none')releaseDir(tiltDirection);tiltDirection=dir;if(dir!=='none')pressDir(dir)}
   function onOrientation(e){
     if(!tiltEnabled || e.beta===null || e.gamma===null)return;
+    if(!orientationSeen){orientationSeen=true;hint.textContent='Capteurs actifs. Incline l’iPhone pour déplacer l’avatar.'}
     if(!tiltBaseline){tiltBaseline={beta:e.beta,gamma:e.gamma};return}
-    const beta=e.beta-tiltBaseline.beta, gamma=e.gamma-tiltBaseline.gamma, threshold=12;
-    let dir='none';
-    if(Math.abs(gamma)>Math.abs(beta) && Math.abs(gamma)>threshold)dir=gamma>0?'right':'left';
-    else if(Math.abs(beta)>threshold)dir=beta>0?'down':'up';
+    const beta=e.beta-tiltBaseline.beta, gamma=e.gamma-tiltBaseline.gamma, strength=Math.max(Math.abs(beta),Math.abs(gamma));
+    const startThreshold=8, stopThreshold=4;
+    let dir=tiltDirection;
+    if(strength<stopThreshold){dir='none'}
+    else if(tiltDirection==='none' && strength>=startThreshold){dir=Math.abs(gamma)>Math.abs(beta)?(gamma>0?'right':'left'):(beta>0?'down':'up')}
+    else if(Math.abs(gamma)>Math.abs(beta) && Math.abs(gamma)>=startThreshold){dir=gamma>0?'right':'left'}
+    else if(Math.abs(beta)>=startThreshold){dir=beta>0?'down':'up'}
     setTiltDirection(dir);
   }
   async function toggleTilt(){
-    if(tiltEnabled){tiltEnabled=false;tiltBaseline=null;setTiltDirection('none');window.removeEventListener('deviceorientation',onOrientation,true);tiltBtn.classList.remove('active');touchControls.style.display='';hint.textContent='Inclinaison désactivée. Appuie sur ⌁ pour la réactiver.';return}
+    if(tiltEnabled){tiltEnabled=false;tiltBaseline=null;orientationSeen=false;setTiltDirection('none');window.removeEventListener('deviceorientation',onOrientation,true);tiltBtn.classList.remove('active');touchControls.style.display='';hint.textContent='Inclinaison désactivée. Appuie sur ⌁ pour la réactiver.';return}
     if(!('DeviceOrientationEvent' in window)){hint.textContent='Les capteurs d’inclinaison ne sont pas disponibles sur cet appareil.';return}
     try{
       if(typeof DeviceOrientationEvent.requestPermission==='function'){
         const permission=await DeviceOrientationEvent.requestPermission();
         if(permission!=='granted'){hint.textContent='Autorise l’accès aux capteurs pour utiliser l’inclinaison.';return}
       }
-      tiltEnabled=true;tiltBaseline=null;window.addEventListener('deviceorientation',onOrientation,true);tiltBtn.classList.add('active');touchControls.style.display='none';hint.textContent='Incline l’iPhone à gauche, à droite, vers l’avant ou vers toi. Remets-le droit pour t’arrêter.';
+      tiltEnabled=true;tiltBaseline=null;orientationSeen=false;window.addEventListener('deviceorientation',onOrientation,true);tiltBtn.classList.add('active');touchControls.style.display='none';hint.textContent='Incline l’iPhone à gauche, à droite, vers l’avant ou vers toi. Remets-le droit pour t’arrêter.';
     }catch(err){hint.textContent='L’accès aux capteurs a été refusé. Vérifie les réglages de Safari.'}
   }
   function moveEntity(e, speed, dt, isPlayer=false){
