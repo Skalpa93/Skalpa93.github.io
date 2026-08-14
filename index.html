@@ -16,7 +16,7 @@
     body{display:flex;justify-content:center;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom)}
     main{width:min(100%,520px);padding:16px 0 24px}
     header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
-    .brand{display:flex;align-items:center;gap:10px}.brand-mark{width:34px;height:34px;border-radius:50%;background:conic-gradient(from 35deg,#ffd83d 0 300deg,transparent 300deg);box-shadow:0 0 20px #ffd83d66}.brand h1{font-size:20px;letter-spacing:.12em;margin:0}.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:.18em;margin-top:2px}
+    .brand{display:flex;align-items:center;gap:10px}.brand-mark{width:34px;height:34px;border-radius:50%;background:conic-gradient(from 35deg,#ffd83d 0 300deg,transparent 300deg);box-shadow:0 0 20px #ffd83d66}.brand h1{font-size:20px;letter-spacing:.12em;margin:0;display:flex;align-items:center;gap:7px}.version{font-size:10px;letter-spacing:.08em;color:#07122e;background:var(--cyan);border-radius:5px;padding:3px 5px;box-shadow:0 0 10px #22d3ee66}.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:.18em;margin-top:2px}
     .actions{display:flex;gap:8px}.icon-btn{border:1px solid #3a477e;background:#121b44;color:#fff;border-radius:12px;width:42px;height:38px;font-size:17px;cursor:pointer}.icon-btn:active{transform:scale(.94)}.icon-btn.active{border-color:var(--cyan);color:var(--cyan);background:#1b2860}
     .hud{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}.stat{background:#101738cc;border:1px solid #263361;border-radius:13px;padding:8px 10px}.stat label{display:block;color:var(--muted);font-size:10px;letter-spacing:.12em;text-transform:uppercase}.stat strong{display:block;font-size:18px;margin-top:2px}
     .game-shell{position:relative;border-radius:20px;padding:9px;background:linear-gradient(145deg,#1f2d6a,#0b1032);box-shadow:0 20px 55px #0009,inset 0 0 0 1px #4758a066}
@@ -30,7 +30,7 @@
 <body>
 <main>
   <header>
-    <div class="brand"><div class="brand-mark" aria-hidden="true"></div><div><h1>NEON MAZE</h1><small>ARCADE EDITION</small></div></div>
+    <div class="brand"><div class="brand-mark" aria-hidden="true"></div><div><h1>NEON MAZE <span class="version">V4</span></h1><small>ARCADE EDITION</small></div></div>
     <div class="actions"><button class="icon-btn" id="pauseBtn" aria-label="Pause">Ⅱ</button><button class="icon-btn" id="soundBtn" aria-label="Son">🔊</button><button class="icon-btn" id="tiltBtn" aria-label="Activer l’inclinaison">⌁</button></div>
   </header>
   <section class="hud" aria-label="Score"><div class="stat"><label>Score</label><strong id="score">00000</strong></div><div class="stat"><label>Record</label><strong id="highScore">00000</strong></div><div class="stat"><label>Vies</label><strong id="lives">♥♥♥</strong></div></section>
