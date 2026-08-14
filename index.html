@@ -61,8 +61,9 @@
   function isWall(x,y){return x<0||y<0||x>=W||y>=H||grid[y][x]==='#'}
   function cloneMap(){return mapTemplate.map(r=>r.split(''))}
   function resetPositions(){
-    player={x:10,y:17,dir:'none',next:'none',px:10,py:17};
-    ghosts=ghostColors.map((color,i)=>({x:10+i%2,y:10+Math.floor(i/2),px:10+i%2,py:10+Math.floor(i/2),dir:i%2?'left':'right',color,homeX:i<2?1:19,homeY:i%2?21:1,scatter:i%2?19:1}));
+    player={x:10,y:16,dir:'none',next:'none',px:10,py:16};
+    const starts=[{x:10,y:11},{x:11,y:11},{x:9,y:11},{x:12,y:11}];
+    ghosts=ghostColors.map((color,i)=>({x:starts[i].x,y:starts[i].y,px:starts[i].x,py:starts[i].y,dir:i%2?'left':'right',color,homeX:i<2?1:19,homeY:i%2?21:1,scatter:i%2?19:1}));
   }
   function resetLevel(){grid=cloneMap();dotsLeft=grid.flat().filter(c=>c==='.'||c==='o').length;resetPositions();frightenedUntil=0;updateHud()}
   function updateHud(){scoreEl.textContent=fmt(score);highScoreEl.textContent=fmt(highScore);livesEl.textContent='♥'.repeat(lives)+'♡'.repeat(3-lives)}
