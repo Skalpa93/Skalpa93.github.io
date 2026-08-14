@@ -17,7 +17,7 @@
     main{width:min(100%,520px);padding:16px 0 24px}
     header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
     .brand{display:flex;align-items:center;gap:10px}.brand-mark{width:34px;height:34px;border-radius:50%;background:conic-gradient(from 35deg,#ffd83d 0 300deg,transparent 300deg);box-shadow:0 0 20px #ffd83d66}.brand h1{font-size:20px;letter-spacing:.12em;margin:0}.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:.18em;margin-top:2px}
-    .actions{display:flex;gap:8px}.icon-btn{border:1px solid #3a477e;background:#121b44;color:#fff;border-radius:12px;width:42px;height:38px;font-size:17px;cursor:pointer}.icon-btn:active{transform:scale(.94)}
+    .actions{display:flex;gap:8px}.icon-btn{border:1px solid #3a477e;background:#121b44;color:#fff;border-radius:12px;width:42px;height:38px;font-size:17px;cursor:pointer}.icon-btn:active{transform:scale(.94)}.icon-btn.active{border-color:var(--cyan);color:var(--cyan);background:#1b2860}
     .hud{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}.stat{background:#101738cc;border:1px solid #263361;border-radius:13px;padding:8px 10px}.stat label{display:block;color:var(--muted);font-size:10px;letter-spacing:.12em;text-transform:uppercase}.stat strong{display:block;font-size:18px;margin-top:2px}
     .game-shell{position:relative;border-radius:20px;padding:9px;background:linear-gradient(145deg,#1f2d6a,#0b1032);box-shadow:0 20px 55px #0009,inset 0 0 0 1px #4758a066}
     canvas{display:block;width:100%;height:auto;aspect-ratio:21/23;background:#05081b;border-radius:13px;image-rendering:pixelated;touch-action:none}
@@ -31,7 +31,7 @@
 <main>
   <header>
     <div class="brand"><div class="brand-mark" aria-hidden="true"></div><div><h1>NEON MAZE</h1><small>ARCADE EDITION</small></div></div>
-    <div class="actions"><button class="icon-btn" id="pauseBtn" aria-label="Pause">Ⅱ</button><button class="icon-btn" id="soundBtn" aria-label="Son">🔊</button></div>
+    <div class="actions"><button class="icon-btn" id="pauseBtn" aria-label="Pause">Ⅱ</button><button class="icon-btn" id="soundBtn" aria-label="Son">🔊</button><button class="icon-btn" id="tiltBtn" aria-label="Activer l’inclinaison">⌁</button></div>
   </header>
   <section class="hud" aria-label="Score"><div class="stat"><label>Score</label><strong id="score">00000</strong></div><div class="stat"><label>Record</label><strong id="highScore">00000</strong></div><div class="stat"><label>Vies</label><strong id="lives">♥♥♥</strong></div></section>
   <section class="game-shell">
@@ -39,7 +39,7 @@
     <div class="overlay" id="overlay"><div class="card"><h2 id="overlayTitle">NEON MAZE</h2><p id="overlayText">Mange tous les points, évite les chasseurs et utilise les bonus pour retourner la situation.</p><button class="primary" id="startBtn">JOUER</button></div></div>
   </section>
   <div class="touch-controls" aria-label="Commandes tactiles"><button class="up" data-dir="up">▲</button><button class="left" data-dir="left">◀</button><button class="down" data-dir="down">▼</button><button class="right" data-dir="right">▶</button></div>
-  <p class="hint">Glisse sur le plateau ou utilise les flèches <span class="kbd">←</span> <span class="kbd">↑</span> <span class="kbd">↓</span> <span class="kbd">→</span></p>
+  <p class="hint" id="hint">Active ⌁ puis incline ton iPhone pour guider l’avatar.</p>
 </main>
 <script>
 (() => {
@@ -47,7 +47,7 @@
   const canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
   const scoreEl = document.getElementById('score'), highScoreEl = document.getElementById('highScore'), livesEl = document.getElementById('lives');
   const overlay = document.getElementById('overlay'), overlayTitle = document.getElementById('overlayTitle'), overlayText = document.getElementById('overlayText'), startBtn = document.getElementById('startBtn');
-  const pauseBtn = document.getElementById('pauseBtn'), soundBtn = document.getElementById('soundBtn');
+  const pauseBtn = document.getElementById('pauseBtn'), soundBtn = document.getElementById('soundBtn'), tiltBtn = document.getElementById('tiltBtn'), hint = document.getElementById('hint'), touchControls = document.querySelector('.touch-controls');
   const mapTemplate = [
     '#####################',' #...................#'.replace(/^ /,''),' #.###.#####.#####.###'.replace(/^ /,''),' #o###.#####.#####.##o'.replace(/^ /,''),' #...................#'.replace(/^ /,''),' #.###.#.#######.#.###'.replace(/^ /,''),' #.....#...###...#...#'.replace(/^ /,''),' #####.### ###.###.####'.replace(/^ /,''),'     .### ###.###.     ','#####.### ###.###.#####','    ..    ###    ..    ','#### .###     ###. ####','    .### ### ###.    ','####.### ### ###.####','    .    ###    .    ','####.### ### ###.####',' #...................#'.replace(/^ /,''),' #.###.#####.#####.###'.replace(/^ /,''),' #o..#...........#..o#'.replace(/^ /,''),' ###.#.### ### ###.#.###',' #.....#   ###   #.....#',' #.######## ########.#',' #####################'
   ].map(row => row.padEnd(21,'#').slice(0,21));
@@ -55,7 +55,7 @@
   const dirs = {left:{x:-1,y:0},right:{x:1,y:0},up:{x:0,y:-1},down:{x:0,y:1},none:{x:0,y:0}};
   const opposite = {left:'right',right:'left',up:'down',down:'up',none:'none'};
   const ghostColors = ['#ff4f9a','#22d3ee','#ff8d3d','#b276ff'];
-  let grid, player, ghosts, score=0, highScore=Number(localStorage.getItem('neonMazeHighScore')||0), lives=3, running=false, paused=false, last=0, raf, soundOn=true, frightenedUntil=0, dotsLeft=0, level=1, audioCtx, heldInput=null;
+  let grid, player, ghosts, score=0, highScore=Number(localStorage.getItem('neonMazeHighScore')||0), lives=3, running=false, paused=false, last=0, raf, soundOn=true, frightenedUntil=0, dotsLeft=0, level=1, audioCtx, heldInput=null, tiltEnabled=false, tiltDirection='none', tiltBaseline=null;
   highScoreEl.textContent = fmt(highScore);
   function fmt(n){return String(n).padStart(5,'0')}
   function isWall(x,y){return x<0||y<0||x>=W||y>=H||grid[y][x]==='#'}
@@ -76,6 +76,27 @@
   function setDir(dir){if(!dirs[dir])return;if(!running){start();}player.next=dir;if(player.dir==='none')player.dir=dir}
   function pressDir(dir){if(!dirs[dir])return;if(!running){start();}heldInput=dir;player.inputHeld=true;player.next=dir;if(player.dir==='none')player.dir=dir}
   function releaseDir(dir){if(heldInput!==dir)return;heldInput=null;player.inputHeld=false;player.next='none';player.dir='none';player.px=Math.round(player.px);player.py=Math.round(player.py)}
+  function setTiltDirection(dir){if(dir===tiltDirection)return;if(tiltDirection!=='none')releaseDir(tiltDirection);tiltDirection=dir;if(dir!=='none')pressDir(dir)}
+  function onOrientation(e){
+    if(!tiltEnabled || e.beta===null || e.gamma===null)return;
+    if(!tiltBaseline){tiltBaseline={beta:e.beta,gamma:e.gamma};return}
+    const beta=e.beta-tiltBaseline.beta, gamma=e.gamma-tiltBaseline.gamma, threshold=12;
+    let dir='none';
+    if(Math.abs(gamma)>Math.abs(beta) && Math.abs(gamma)>threshold)dir=gamma>0?'right':'left';
+    else if(Math.abs(beta)>threshold)dir=beta>0?'down':'up';
+    setTiltDirection(dir);
+  }
+  async function toggleTilt(){
+    if(tiltEnabled){tiltEnabled=false;tiltBaseline=null;setTiltDirection('none');window.removeEventListener('deviceorientation',onOrientation,true);tiltBtn.classList.remove('active');touchControls.style.display='';hint.textContent='Inclinaison désactivée. Appuie sur ⌁ pour la réactiver.';return}
+    if(!('DeviceOrientationEvent' in window)){hint.textContent='Les capteurs d’inclinaison ne sont pas disponibles sur cet appareil.';return}
+    try{
+      if(typeof DeviceOrientationEvent.requestPermission==='function'){
+        const permission=await DeviceOrientationEvent.requestPermission();
+        if(permission!=='granted'){hint.textContent='Autorise l’accès aux capteurs pour utiliser l’inclinaison.';return}
+      }
+      tiltEnabled=true;tiltBaseline=null;window.addEventListener('deviceorientation',onOrientation,true);tiltBtn.classList.add('active');touchControls.style.display='none';hint.textContent='Incline l’iPhone à gauche, à droite, vers l’avant ou vers toi. Remets-le droit pour t’arrêter.';
+    }catch(err){hint.textContent='L’accès aux capteurs a été refusé. Vérifie les réglages de Safari.'}
+  }
   function moveEntity(e, speed, dt, isPlayer=false){
     const step=speed*dt;
     if(isPlayer && e.next!=='none'){
@@ -112,7 +133,7 @@
   function drawGhost(g){const x=g.px*TILE+TILE/2,y=g.py*TILE+TILE/2,r=TILE*.38;const frightened=frightenedUntil>performance.now();ctx.fillStyle=frightened?'#4267e8':g.color;ctx.beginPath();ctx.arc(x,y-r*.12,r,Math.PI,0);ctx.lineTo(x+r,y+r*.9);ctx.lineTo(x+r*.5,y+r*.55);ctx.lineTo(x,y+r*.9);ctx.lineTo(x-r*.5,y+r*.55);ctx.lineTo(x-r,y+r*.9);ctx.closePath();ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-r*.36,y-r*.12,r*.2,0,Math.PI*2);ctx.arc(x+r*.36,y-r*.12,r*.2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#10142e';ctx.beginPath();ctx.arc(x-r*.3,y-r*.1,r*.09,0,Math.PI*2);ctx.arc(x+r*.3,y-r*.1,r*.09,0,Math.PI*2);ctx.fill()}
   function loop(t){if(!running)return;const dt=Math.min((t-last)/1000,.05);last=t;if(!paused)update(dt);draw();raf=requestAnimationFrame(loop)}
   function beep(freq,duration){if(!soundOn)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=freq;o.type='square';g.gain.setValueAtTime(.025,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+duration)}catch(e){}}
-  startBtn.addEventListener('click',()=>{if(running&&paused){paused=false;hideOverlay();pauseBtn.textContent='Ⅱ';last=performance.now();raf=requestAnimationFrame(loop)}else start()});pauseBtn.addEventListener('click',pause);soundBtn.addEventListener('click',()=>{soundOn=!soundOn;soundBtn.textContent=soundOn?'🔊':'🔇'});
+  startBtn.addEventListener('click',()=>{if(running&&paused){paused=false;hideOverlay();pauseBtn.textContent='Ⅱ';last=performance.now();raf=requestAnimationFrame(loop)}else start()});pauseBtn.addEventListener('click',pause);soundBtn.addEventListener('click',()=>{soundOn=!soundOn;soundBtn.textContent=soundOn?'🔊':'🔇'});tiltBtn.addEventListener('click',toggleTilt);
   document.querySelectorAll('[data-dir]').forEach(b=>{b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture?.(e.pointerId);pressDir(b.dataset.dir)});b.addEventListener('pointerup',e=>{e.preventDefault();releaseDir(b.dataset.dir)});b.addEventListener('pointercancel',()=>releaseDir(b.dataset.dir));});
   window.addEventListener('keydown',e=>{const m={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',a:'left',d:'right',w:'up',s:'down'};if(m[e.key]){e.preventDefault();pressDir(m[e.key])}if(e.key===' '){e.preventDefault();pause()}});
   window.addEventListener('keyup',e=>{const m={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',a:'left',d:'right',w:'up',s:'down'};if(m[e.key]){e.preventDefault();releaseDir(m[e.key])}});
