@@ -1,0 +1,14 @@
+{
+  "name": "Neon Maze",
+  "short_name": "Neon Maze",
+  "description": "Jeu de labyrinthe arcade installable sur iPhone",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#070b24",
+  "theme_color": "#070b24",
+  "orientation": "portrait",
+  "icons": [
+    {"src":"icon-180.png","sizes":"180x180","type":"image/png","purpose":"any maskable"},
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
