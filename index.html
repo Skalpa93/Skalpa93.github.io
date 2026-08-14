@@ -55,30 +55,38 @@
   const dirs = {left:{x:-1,y:0},right:{x:1,y:0},up:{x:0,y:-1},down:{x:0,y:1},none:{x:0,y:0}};
   const opposite = {left:'right',right:'left',up:'down',down:'up',none:'none'};
   const ghostColors = ['#ff4f9a','#22d3ee','#ff8d3d','#b276ff'];
-  let grid, player, ghosts, score=0, highScore=Number(localStorage.getItem('neonMazeHighScore')||0), lives=3, running=false, paused=false, last=0, raf, soundOn=true, frightenedUntil=0, dotsLeft=0, level=1, audioCtx;
+  let grid, player, ghosts, score=0, highScore=Number(localStorage.getItem('neonMazeHighScore')||0), lives=3, running=false, paused=false, last=0, raf, soundOn=true, frightenedUntil=0, dotsLeft=0, level=1, audioCtx, heldInput=null;
   highScoreEl.textContent = fmt(highScore);
   function fmt(n){return String(n).padStart(5,'0')}
   function isWall(x,y){return x<0||y<0||x>=W||y>=H||grid[y][x]==='#'}
   function cloneMap(){return mapTemplate.map(r=>r.split(''))}
   function resetPositions(){
-    player={x:10,y:16,dir:'none',next:'none',px:10,py:16};
+    player={x:10,y:16,dir:'none',next:'none',px:10,py:16,inputHeld:false};
     const starts=[{x:10,y:11},{x:11,y:11},{x:9,y:11},{x:12,y:11}];
     ghosts=ghostColors.map((color,i)=>({x:starts[i].x,y:starts[i].y,px:starts[i].x,py:starts[i].y,dir:i%2?'left':'right',color,homeX:i<2?1:19,homeY:i%2?21:1,scatter:i%2?19:1}));
   }
   function resetLevel(){grid=cloneMap();dotsLeft=grid.flat().filter(c=>c==='.'||c==='o').length;resetPositions();frightenedUntil=0;updateHud()}
   function updateHud(){scoreEl.textContent=fmt(score);highScoreEl.textContent=fmt(highScore);livesEl.textContent='♥'.repeat(lives)+'♡'.repeat(3-lives)}
-  function start(){score=0;lives=3;level=1;resetLevel();running=true;paused=false;hideOverlay();last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);beep(440,.06)}
+  function start(){score=0;lives=3;level=1;heldInput=null;resetLevel();running=true;paused=false;hideOverlay();last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);beep(440,.06)}
   function hideOverlay(){overlay.classList.add('hidden')}
   function showOverlay(title,text,button='REJOUER'){overlayTitle.textContent=title;overlayText.textContent=text;startBtn.textContent=button;overlay.classList.remove('hidden')}
   function pause(){if(!running)return;paused=!paused;pauseBtn.textContent=paused?'▶':'Ⅱ';if(!paused){last=performance.now();raf=requestAnimationFrame(loop)}else{showOverlay('PAUSE','Respire un coup. La partie reprendra où tu l’as laissée.','REPRENDRE')}}
   function tileAt(obj){return {x:Math.round(obj.px),y:Math.round(obj.py)}}
   function canMove(x,y){return !isWall(x,y)}
   function setDir(dir){if(!dirs[dir])return;if(!running){start();}player.next=dir;if(player.dir==='none')player.dir=dir}
+  function pressDir(dir){if(!dirs[dir])return;if(!running){start();}heldInput=dir;player.inputHeld=true;player.next=dir;if(player.dir==='none')player.dir=dir}
+  function releaseDir(dir){if(heldInput!==dir)return;heldInput=null;player.inputHeld=false;player.next='none';player.dir='none';player.px=Math.round(player.px);player.py=Math.round(player.py)}
   function moveEntity(e, speed, dt, isPlayer=false){
-    const d=dirs[e.dir]||dirs.none; const step=speed*dt;
+    const step=speed*dt;
+    if(isPlayer && e.next!=='none'){
+      const nd=dirs[e.next], cx=Math.round(e.px), cy=Math.round(e.py);
+      const closeToCenter=Math.abs(e.px-cx)<.2 && Math.abs(e.py-cy)<.2;
+      if(closeToCenter && canMove(cx+nd.x,cy+nd.y)){e.px=cx;e.py=cy;e.dir=e.next}
+    }
+    const d=dirs[e.dir]||dirs.none;
+    if(e.dir==='none')return;
     const nx=e.px+d.x*step, ny=e.py+d.y*step;
     if(canMove(Math.round(nx),Math.round(ny))){e.px=nx;e.py=ny}else{e.px=Math.round(e.px);e.py=Math.round(e.py);if(isPlayer)e.dir='none';return}
-    if(isPlayer){const nd=dirs[e.next];if(nd && canMove(Math.round(e.px+nd.x*.45),Math.round(e.py+nd.y*.45)))e.dir=e.next;}
     if(e.px<0)e.px=W-1;if(e.px>=W)e.px=0;
   }
   function chooseGhostDir(g){
@@ -105,8 +113,9 @@
   function loop(t){if(!running)return;const dt=Math.min((t-last)/1000,.05);last=t;if(!paused)update(dt);draw();raf=requestAnimationFrame(loop)}
   function beep(freq,duration){if(!soundOn)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=freq;o.type='square';g.gain.setValueAtTime(.025,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+duration)}catch(e){}}
   startBtn.addEventListener('click',()=>{if(running&&paused){paused=false;hideOverlay();pauseBtn.textContent='Ⅱ';last=performance.now();raf=requestAnimationFrame(loop)}else start()});pauseBtn.addEventListener('click',pause);soundBtn.addEventListener('click',()=>{soundOn=!soundOn;soundBtn.textContent=soundOn?'🔊':'🔇'});
-  document.querySelectorAll('[data-dir]').forEach(b=>{b.addEventListener('pointerdown',e=>{e.preventDefault();setDir(b.dataset.dir)})});
-  window.addEventListener('keydown',e=>{const m={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',a:'left',d:'right',w:'up',s:'down'};if(m[e.key]){e.preventDefault();setDir(m[e.key])}if(e.key===' '){e.preventDefault();pause()}});
+  document.querySelectorAll('[data-dir]').forEach(b=>{b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture?.(e.pointerId);pressDir(b.dataset.dir)});b.addEventListener('pointerup',e=>{e.preventDefault();releaseDir(b.dataset.dir)});b.addEventListener('pointercancel',()=>releaseDir(b.dataset.dir));});
+  window.addEventListener('keydown',e=>{const m={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',a:'left',d:'right',w:'up',s:'down'};if(m[e.key]){e.preventDefault();pressDir(m[e.key])}if(e.key===' '){e.preventDefault();pause()}});
+  window.addEventListener('keyup',e=>{const m={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',a:'left',d:'right',w:'up',s:'down'};if(m[e.key]){e.preventDefault();releaseDir(m[e.key])}});
   let touchStart=null;canvas.addEventListener('touchstart',e=>{const t=e.changedTouches[0];touchStart={x:t.clientX,y:t.clientY}},{passive:true});canvas.addEventListener('touchend',e=>{if(!touchStart)return;const t=e.changedTouches[0],dx=t.clientX-touchStart.x,dy=t.clientY-touchStart.y;if(Math.max(Math.abs(dx),Math.abs(dy))>18)setDir(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'));touchStart=null},{passive:true});
   resetLevel();draw();
   if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
