@@ -30,7 +30,7 @@
 <body>
 <main>
   <header>
-    <div class="brand"><div class="brand-mark" aria-hidden="true"></div><div><h1>NEON MAZE <span class="version">V4</span></h1><small>ARCADE EDITION</small></div></div>
+    <div class="brand"><div class="brand-mark" aria-hidden="true"></div><div><h1>NEON MAZE <span class="version">V5</span></h1><small>ARCADE EDITION</small></div></div>
     <div class="actions"><button class="icon-btn" id="pauseBtn" aria-label="Pause">Ⅱ</button><button class="icon-btn" id="soundBtn" aria-label="Son">🔊</button><button class="icon-btn" id="tiltBtn" aria-label="Activer l’inclinaison">⌁</button></div>
   </header>
   <section class="hud" aria-label="Score"><div class="stat"><label>Score</label><strong id="score">00000</strong></div><div class="stat"><label>Record</label><strong id="highScore">00000</strong></div><div class="stat"><label>Vies</label><strong id="lives">♥♥♥</strong></div></section>
@@ -61,7 +61,7 @@
   function isWall(x,y){return x<0||y<0||x>=W||y>=H||grid[y][x]==='#'}
   function cloneMap(){return mapTemplate.map(r=>r.split(''))}
   function resetPositions(){
-    player={x:10,y:16,dir:'none',next:'none',px:10,py:16,inputHeld:false};
+    player={x:12,y:14,dir:'none',next:'none',px:12,py:14,inputHeld:false};
     const starts=[{x:10,y:11},{x:11,y:11},{x:9,y:11},{x:12,y:11}];
     ghosts=ghostColors.map((color,i)=>({x:starts[i].x,y:starts[i].y,px:starts[i].x,py:starts[i].y,dir:i%2?'left':'right',color,homeX:i<2?1:19,homeY:i%2?21:1,scatter:i%2?19:1}));
   }
