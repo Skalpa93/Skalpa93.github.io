@@ -30,7 +30,7 @@
 <body>
 <main>
   <header>
-    <div class="brand"><div class="brand-mark" aria-hidden="true"></div><div><h1>NEON MAZE <span class="version">V7</span></h1><small>ARCADE EDITION</small></div></div>
+    <div class="brand"><div class="brand-mark" aria-hidden="true"></div><div><h1>NEON MAZE <span class="version">V8</span></h1><small>ARCADE EDITION</small></div></div>
     <div class="actions"><button class="icon-btn" id="pauseBtn" aria-label="Pause">Ⅱ</button><button class="icon-btn" id="soundBtn" aria-label="Son">🔊</button><button class="icon-btn" id="tiltBtn" aria-label="Activer l’inclinaison">⌁</button></div>
   </header>
   <section class="hud" aria-label="Score"><div class="stat"><label>Score</label><strong id="score">00000</strong></div><div class="stat"><label>Record</label><strong id="highScore">00000</strong></div><div class="stat"><label>Vies</label><strong id="lives">♥♥♥</strong></div></section>
@@ -98,21 +98,17 @@
       tiltEnabled=true;tiltBaseline=null;orientationSeen=false;window.addEventListener('deviceorientation',onOrientation,true);tiltBtn.classList.add('active');touchControls.style.display='none';hint.textContent='Incline l’iPhone à gauche, à droite, vers l’avant ou vers toi. Remets-le droit pour t’arrêter.';
     }catch(err){hint.textContent='L’accès aux capteurs a été refusé. Vérifie les réglages de Safari.'}
   }
-  function moveEntity(e, speed, dt, isPlayer=false){
-    const step=speed*dt;
-    if(isPlayer && e.next!=='none'){
-      const nd=dirs[e.next], cx=Math.round(e.px), cy=Math.round(e.py);
-      const closeToCenter=Math.abs(e.px-cx)<.2 && Math.abs(e.py-cy)<.2;
-      if(closeToCenter && canMove(cx+nd.x,cy+nd.y)){e.px=cx;e.py=cy;e.dir=e.next}
-    }
-    const d=dirs[e.dir]||dirs.none;
-    if(e.dir==='none')return;
-    const nx=e.px+d.x*step, ny=e.py+d.y*step;
-    if(canMove(Math.round(nx),Math.round(ny))){e.px=nx;e.py=ny}else{e.px=Math.round(e.px);e.py=Math.round(e.py);if(isPlayer)e.dir='none';return}
-    if(e.px<0)e.px=W-1;if(e.px>=W)e.px=0;
+  function movePlayer(dt){
+    const activeDir=tiltEnabled && tiltDirection!=='none'?tiltDirection:(player.inputHeld?player.dir:player.dir);
+    if(!activeDir || activeDir==='none')return;
+    const d=dirs[activeDir], step=5.6*dt, nx=player.px+d.x*step, ny=player.py+d.y*step;
+    player.dir=activeDir;player.next=activeDir;
+    if(canMove(Math.round(nx),Math.round(ny))){player.px=nx;player.py=ny}
+    else{player.px=Math.round(player.px);player.py=Math.round(player.py)}
+    if(player.px<0)player.px=W-1;if(player.px>=W)player.px=0;
   }
   function update(dt){
-    moveEntity(player,5.6,dt,true);
+    movePlayer(dt);
     const p=tileAt(player), cell=grid[p.y]?.[p.x];
     if(cell==='.'||cell==='o'){grid[p.y][p.x]=' ';score+=cell==='o'?50:10;if(cell==='o')frightenedUntil=performance.now()+7000;dotsLeft--;beep(cell==='o'?180:520,.035);if(score>highScore){highScore=score;localStorage.setItem('neonMazeHighScore',highScore)}if(!dotsLeft){level++;score+=500;resetLevel();beep(660,.12)}}
     updateHud();
