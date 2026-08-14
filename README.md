@@ -1,4 +1,4 @@
-# Neon Maze V8
+# Neon Maze V9
 
 Jeu de labyrinthe arcade inspiré des jeux de poursuite classiques, livré comme PWA installable sur iPhone.
 
